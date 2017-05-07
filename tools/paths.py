@@ -1,10 +1,7 @@
-import _pickle as pickle
+import os
 
-def write(obj, path):
-    with open(path, 'wb') as f:
-        pickle.dump(obj, f)
+def home():
+    return os.path.expanduser('~')
 
-def read(path):
-    with open(path, 'rb') as f:
-        obj = pickle.load(f)
-    return obj
+def downloads():
+    return home + '/Downloads'

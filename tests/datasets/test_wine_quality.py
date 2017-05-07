@@ -1,11 +1,13 @@
+# TODO: should cache data in Downloads folder
 import pytest
+import os
+import tempfile
 
 import reprod as rr
 from reprod.datasets import WineQuality
 
-@pytest.mark.skipif(rr.internet.is_off(), reason='no internet')
-def test_download():
-    expected_csv_head = [
+WINE = WineQuality()
+EXPECTED_DATA_HEAD = [
         '"fixed acidity";"volatile acidity";"citric acid";"residual sugar";"chlorides";'
         '"free sulfur dioxide";"total sulfur dioxide";"density";"pH";"sulphates";'
         '"alcohol";"quality"',
@@ -16,7 +18,16 @@ def test_download():
         '7.4;0.7;0;1.9;0.076;11;34;0.9978;3.51;0.56;9.4;5'
         ]
 
-    wine = WineQuality()
-    csv = wine.download()
+@pytest.mark.skipif(rr.internet.is_off(), reason='no internet')
+def test_download():
+    csv = WINE.download()
     csv_head = csv.split('\n')[:6]
-    assert expected_csv_head == csv_head, 'Downloaded data not as expected.'
+    assert EXPECTED_DATA_HEAD == csv_head, 'Downloaded data not as expected.'
+
+@pytest.mark.skipif(rr.internet.is_off(), reason='no internet')
+def test_write_df():
+    with tempfile.TemporaryDirectory() as dirname:
+        filename = dirname + '/wine_quality.hdf'
+        assert not os.path.isfile(filename), 'Filename already exists.'
+        WINE.write_df(filename)
+        assert os.path.isfile(filename), 'Data not saved.'
