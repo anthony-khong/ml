@@ -1,8 +1,8 @@
 import matplotlib.pyplot as plt
 import numpy as np
 import tensorflow as tf
-from tensorflow.examples.tutorials.mnist import input_data
 from tensorflow.contrib import distributions as dd
+from tensorflow.examples.tutorials.mnist import input_data
 
 import reprod as rr
 
@@ -12,11 +12,10 @@ def load_mnist(n_train=1000, n_test=1000):
     sample_ix = lambda n: np.random.choice(np.arange(n), size=n, replace=False)
     train_ix, test_ix = sample_ix(n_train), sample_ix(n_test)
     mnist = input_data.read_data_sets(MNIST_PATH, one_hot=True)
-    data = {'train': mnist.train.images[train_ix],
-            'test': mnist.test.images[test_ix]}
+    data = {'train': mnist.train.images[train_ix], 'test': mnist.test.images[test_ix]}
     return data
 
-def plot(axis, pixels):
+def draw_digit(axis, pixels):
     pixels = np.array(255 * pixels, dtype='uint8').reshape((28, 28))
     axis.imshow(pixels, cmap='gray')
 
@@ -32,8 +31,7 @@ if __name__ == '__main__':
     weights = {'hidden': make_weight((n_feats, n_hiddens)),
                'mean': make_weight((n_hiddens, n_latents)),
                'std': make_weight((n_hiddens, n_latents))}
-    biases = {'hidden': make_bias((n_hiddens)),
-              'mean': make_bias((n_latents)),
+    biases = {'hidden': make_bias((n_hiddens)), 'mean': make_bias((n_latents)),
               'std': make_bias((n_latents))}
 
     hidden = tf.matmul(feats, weights['hidden']) + biases['hidden']
@@ -78,5 +76,5 @@ if __name__ == '__main__':
             if axis != axes[0][0]:
                 for _ in range(10):
                     initial_image = sess.run(preds, feed_dict={feats: initial_image})
-            plot(axis, initial_image)
+            draw_digit(axis, initial_image)
     plt.show()
