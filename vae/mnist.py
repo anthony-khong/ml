@@ -1,3 +1,4 @@
+import matplotlib.pyplot as plt
 import numpy as np
 import tensorflow as tf
 from tensorflow.examples.tutorials.mnist import input_data
@@ -14,6 +15,10 @@ def load_mnist(n_train=1000, n_test=1000):
     data = {'train': mnist.train.images[train_ix],
             'test': mnist.test.images[test_ix]}
     return data
+
+def plot(axis, pixels):
+    pixels = np.array(255 * pixels, dtype='uint8').reshape((28, 28))
+    axis.imshow(pixels, cmap='gray')
 
 if __name__ == '__main__':
     data = load_mnist()
@@ -59,10 +64,19 @@ if __name__ == '__main__':
     train_step = tf.train.AdamOptimizer(1e-3).minimize(objective)
     sess = tf.Session()
     sess.run(tf.global_variables_initializer())
-    for _ in range(10000):
+    for _ in range(1000):
         ix = np.random.choice(np.arange(1000), size=16, replace=False)
         x, x_test = data['train'][ix], data['test'][ix]
         print(sess.run(objective, feed_dict={feats: x_test}))
         sess.run(train_step, feed_dict={feats: x})
 
     # Successive image generations
+    initial_image = data['test'][[15]]
+    _, axes = plt.subplots(3, 4)
+    for axes_ in axes:
+        for axis in axes_:
+            if axis != axes[0][0]:
+                for _ in range(10):
+                    initial_image = sess.run(preds, feed_dict={feats: initial_image})
+            plot(axis, initial_image)
+    plt.show()
