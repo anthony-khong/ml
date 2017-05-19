@@ -9,7 +9,6 @@ def load_mnist():
     if not os.path.isfile(expected_mnist_path):
         download_mnist(expected_mnist_path)
     raw_mnist = input_data.read_data_sets(expected_mnist_path, one_hot=True)
-    import pdb;pdb.set_trace() 
     mnist_data = {'train': raw_mnist.train.images,
                   'val': raw_mnist.validation.images,
                   'test': raw_mnist.test.images}
@@ -17,5 +16,3 @@ def load_mnist():
 
 def download_mnist(path):
     input_data.read_data_sets(path, one_hot=True)
-
-     
