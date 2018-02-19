@@ -1,20 +1,22 @@
+import os
 import requests
 from io import StringIO
 
 import pandas as pd
 
-from reprod.datasets.base import UCIDataSet
+import ml
 
-class WineQuality(UCIDataSet):
+def download_wine_quality():
+    base_url = 'https://archive.ics.uci.edu/ml/machine-learning-databases/'
     wine_quality_ext = 'wine-quality/winequality-red.csv'
-    csv_url = UCIDataSet.base_url + wine_quality_ext
+    page = requests.get(base_url + wine_quality_ext)
+    csv = page.text
+    return csv
 
-    def download(self):
-        page = requests.get(self.csv_url)
-        csv = page.text
-        return csv
-
-    def get_df(self):
-        csv = self.download()
+def load_wine_quality():
+    expected_csv_path = ml.paths.dropbox() + '/datasets/wine_quality.csv'
+    if not os.path.isfile(expected_csv_path):
+        csv = download_wine_quality()
         df = pd.read_csv(StringIO(csv), sep=';')
-        return df
+        df.to_csv(expected_csv_path, index=False)
+    return df.read_csv(expected_csv_path)
