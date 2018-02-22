@@ -3,5 +3,6 @@ from .tools import (
         io,
         nnet,
         paths,
-        stats
+        stats,
+        wrangle
         )
