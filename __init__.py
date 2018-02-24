@@ -1,4 +1,5 @@
 from .tools import (
+        fun,
         internet,
         io,
         nnet,

@@ -1,10 +1,10 @@
 import pickle
 import os
-from functools import reduce
 
 import numpy as np
 
 import ml
+from ml import fun
 
 def cifar10_directory():
     return ml.paths.dropbox() + '/datasets/cifar-10-batches-py'
@@ -12,11 +12,9 @@ def cifar10_directory():
 def load_cifar10():
     if not os.path.isfile(cifar10_directory() + '/data_batch_1'):
         download_cifar10()
-    def combine_batch(left, right):
-        return {'features': np.vstack([left['features'], right['features']]),
-                'labels': np.vstack([left['labels'], right['labels']])}
-    return {'train': reduce(combine_batch, map(load_batch, [1, 2, 3, 4])),
-            'val': load_batch(5),
+    train_batches = map(load_batch, [1, 2, 3, 4, 5])
+    stack_matrix = lambda x, y: np.vstack([x, y])
+    return {'train': fun.reduce_values(stack_matrix, train_batches),
             'test': load_batch('test')}
 
 def load_batch(batch_id):
@@ -35,5 +33,8 @@ def download_cifar10():
     os.system(f'tar -xvzf {download_path} -C {data_directory}')
 
 if __name__ == '__main__':
-    data =load_cifar10()
+    data = load_cifar10()
 
+    for split, data_split in data.items():
+        features, labels = data_split['features'], data_split['labels']
+        print(f'Split: {split} | Feature: {features.shape} | Labels: {labels.shape}')
