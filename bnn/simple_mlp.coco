@@ -1,0 +1,24 @@
+import tensorflow as tf
+
+if __name__ == '__main__':
+    # Placeholders
+    features = tf.placeholder('float', [None, 784])
+    labels = tf.placeholder('float', [None, 10])
+
+    # Computation graph
+    weights = {
+            'hidden': tf.Variable(tf.random_normal([784, 100])),
+            'output': tf.Variable(tf.random_normal([100, 10]))
+            }
+    biases =  {
+            'hidden': tf.Variable(tf.random_normal([100])),
+            'output': tf.Variable(tf.random_normal([10]))
+            }
+    cross_entropy = (
+        features
+            |> xs -> tf.matmul(xs, weights['hidden']) + biases['hidden']
+            |> hs -> tf.matmul(hs, weights['output']) + biases['output']
+            |> logits -> tf.nn.softmax_cross_entropy_with_logits(labels=labels, logits=logits)
+            |> tf.reduce_mean
+        )
+
