@@ -14,11 +14,12 @@ if __name__ == '__main__':
             'hidden': tf.Variable(tf.random_normal([100])),
             'output': tf.Variable(tf.random_normal([10]))
             }
+
     cross_entropy = (
         features
-            |> xs -> tf.matmul(xs, weights['hidden']) + biases['hidden']
-            |> hs -> tf.matmul(hs, weights['output']) + biases['output']
-            |> logits -> tf.nn.softmax_cross_entropy_with_logits(labels=labels, logits=logits)
+            |> xs -> (xs `tf.matmul` weights['hidden']) + biases['hidden']
+            |> hs -> (hs `tf.matmul` weights['output']) + biases['output']
+            |> ls -> tf.nn.softmax_cross_entropy_with_logits(labels=labels, logits=ls)
             |> tf.reduce_mean
         )
 
