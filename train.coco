@@ -1,0 +1,45 @@
+import numpy as np
+import tensorflow as tf
+
+from ml import wrangle
+
+def train_classifier(dataset, features, labels, logits, optimiser, minibatch_size, num_epochs):
+  accuracy = (
+    logits
+      |> xs -> tf.argmax(xs, axis=1) `tf.equal` tf.argmax(labels, axis=1)
+      |> tf.to_float
+      |> tf.reduce_mean
+    )
+  cross_entropy = (
+    logits
+      |> ls -> tf.nn.softmax_cross_entropy_with_logits_v2(labels=labels, logits=ls)
+      |> tf.reduce_mean
+    )
+  train_step = optimiser.minimize(cross_entropy)
+
+  def train_one_step(session, xs, ys):
+    train_feeds = {features: xs, labels: ys}
+    _, loss = session.run([train_step, cross_entropy], train_feeds)
+    return loss
+
+  def train_one_epoch(session):
+    train_loss = (
+      dataset['train']
+        |> train -> split(train['features'], train['labels'])
+        |> map$(pair -> train_one_step(session, *pair))
+        |> list
+        |> np.mean
+      )
+    test_feeds = {features: dataset['test']['features'], labels: dataset['test']['labels']}
+    test_loss, test_accuracy = session.run([cross_entropy, accuracy], test_feeds)
+    return train_loss, test_loss, test_accuracy
+
+  split = wrangle.minibatch_splitter(minibatch_size)
+  with tf.Session() as session:
+    session.run(tf.global_variables_initializer())
+    (range(0, num_epochs)
+      |> map$(_ -> train_one_epoch(session))
+      |> map$(print)
+      |> list)
+  return session
+

@@ -1,60 +1,28 @@
 import numpy as np
 import tensorflow as tf
 
-from ml import wrangle
+from ml.train import train_classifier
 from ml.datasets.mnist import load_mnist
 
 if __name__ == '__main__':
-    # Placeholders
-    features = tf.placeholder('float', [None, 784])
-    labels = tf.placeholder('float', [None, 10])
+  # Placeholders
+  features = tf.placeholder('float', [None, 784])
+  labels = tf.placeholder('float', [None, 10])
 
-    # Computation graph
-    weights = {
-            'hidden': tf.Variable(tf.random_normal([784, 100])),
-            'output': tf.Variable(tf.random_normal([100, 10]))
-            }
-    biases =  {
-            'hidden': tf.Variable(tf.random_normal([100])),
-            'output': tf.Variable(tf.random_normal([10]))
-            }
-    logits = (
-        features
-            |> xs -> (xs `tf.matmul` weights['hidden']) + biases['hidden']
-            |> hs -> (hs `tf.matmul` weights['output']) + biases['output']
-        )
-    accuracy = (
-        logits
-            |> ls -> tf.argmax(ls, axis=1) `tf.equal` tf.argmax(labels, axis=1)
-            |> ys -> tf.reduce_mean(tf.to_float(ys))
-        )
-    cross_entropy = (
-        logits
-            |> ls -> tf.nn.softmax_cross_entropy_with_logits(labels=labels, logits=ls)
-            |> tf.reduce_mean
-        )
-    train_step = tf.train.AdamOptimizer(1e-3).minimize(cross_entropy)
-
-    # Training
-    def train_one_step(session, xs, ys):
-        train_feeds = {features: xs, labels: ys}
-        _, cost = session.run([train_step, cross_entropy], train_feeds)
-        return cost
-
-    def train_one_epoch(session):
-        train_cost = (
-            mnist['train']
-                |> train -> split(train['features'], train['labels'])
-                |> map$(pair -> train_one_step(session, *pair))
-                |> list
-                |> np.mean
-            )
-        test_feeds = {features: mnist['test']['features'], labels: mnist['test']['labels']}
-        test_cost, test_accuracy = session.run([cross_entropy, accuracy], test_feeds)
-        return train_cost, test_cost, test_accuracy
-
-    mnist = load_mnist()
-    split = wrangle.minibatch_splitter(128)
-    with tf.Session() as session:
-        session.run(tf.global_variables_initializer())
-        range(0, 25) |> map$(_ -> train_one_epoch(session)) |> map$(print) |> list
+  # Computation graph
+  weights = {
+    'hidden': tf.Variable(tf.random_normal([784, 100])),
+    'output': tf.Variable(tf.random_normal([100, 10]))
+    }
+  biases =  {
+    'hidden': tf.Variable(tf.random_normal([100])),
+    'output': tf.Variable(tf.random_normal([10]))
+    }
+  logits = (
+    features
+      |> xs -> (xs `tf.matmul` weights['hidden']) + biases['hidden']
+      |> hs -> (hs `tf.matmul` weights['output']) + biases['output']
+    )
+  optimiser = tf.train.AdamOptimizer(1e-3)
+  mnist = load_mnist()
+  train_classifier(mnist, features, labels, logits, optimiser, minibatch_size=256, num_epochs=25)

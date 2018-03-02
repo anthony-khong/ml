@@ -1,0 +1,33 @@
+import numpy as np
+import tensorflow as tf
+
+from ml.train import train_classifier
+from ml.datasets.mnist import load_mnist
+
+def reshape_to_matrix(xs):
+  n_cols = xs[0].shape |> map$(.value) |> reduce$(*)
+  return tf.reshape(xs, [-1, n_cols])
+
+if __name__ == '__main__':
+  features = tf.placeholder('float', [None, 784])
+  labels = tf.placeholder('float', [None, 10])
+
+  conv = (xs, fsize, ksize) -> tf.layers.conv2d(xs, fsize, ksize, padding='same', activation=tf.nn.relu)
+  pool = (xs, psize, stride) -> tf.layers.max_pooling2d(xs, psize, stride)
+  dense = (xs, units) -> tf.layers.dense(xs, units, activation=tf.nn.relu)
+  dropout = tf.layers.dropout
+  logits = (
+    features
+      |> xs -> tf.reshape(xs, [-1, 28, 28, 1])
+      |> xs -> conv(xs, 32, [5, 5])
+      |> xs -> pool(xs, [2, 2], 2)
+      |> reshape_to_matrix
+      |> xs -> dense(xs, 100)
+      |> xs -> dropout(xs, 0.4)
+      |> xs -> dense(xs, 10)
+      |> tf.nn.softmax
+    )
+
+  optimiser = tf.train.AdamOptimizer(1e-3)
+  mnist = load_mnist()
+  train_classifier(mnist, features, labels, logits, optimiser, minibatch_size=256, num_epochs=25)
