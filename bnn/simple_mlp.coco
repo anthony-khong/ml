@@ -18,27 +18,43 @@ if __name__ == '__main__':
             'hidden': tf.Variable(tf.random_normal([100])),
             'output': tf.Variable(tf.random_normal([10]))
             }
-    cross_entropy = (
+    logits = (
         features
             |> xs -> (xs `tf.matmul` weights['hidden']) + biases['hidden']
             |> hs -> (hs `tf.matmul` weights['output']) + biases['output']
+        )
+    accuracy = (
+        logits
+            |> ls -> tf.argmax(ls, axis=1) `tf.equal` tf.argmax(labels, axis=1)
+            |> ys -> tf.reduce_mean(tf.to_float(ys))
+        )
+    cross_entropy = (
+        logits
             |> ls -> tf.nn.softmax_cross_entropy_with_logits(labels=labels, logits=ls)
             |> tf.reduce_mean
         )
-    train_op = tf.train.AdamOptimizer(1e-3).minimize(cross_entropy)
+    train_step = tf.train.AdamOptimizer(1e-3).minimize(cross_entropy)
 
     # Training
+    def train_one_step(session, xs, ys):
+        train_feeds = {features: xs, labels: ys}
+        _, cost = session.run([train_step, cross_entropy], train_feeds)
+        return cost
+
+    def train_one_epoch(session):
+        train_cost = (
+            mnist['train']
+                |> train -> split(train['features'], train['labels'])
+                |> map$(pair -> train_one_step(session, *pair))
+                |> list
+                |> np.mean
+            )
+        test_feeds = {features: mnist['test']['features'], labels: mnist['test']['labels']}
+        test_cost, test_accuracy = session.run([cross_entropy, accuracy], test_feeds)
+        return train_cost, test_cost, test_accuracy
+
     mnist = load_mnist()
-    split = wrangle.minibatch_splitter(512)
+    split = wrangle.minibatch_splitter(128)
     with tf.Session() as session:
-        def train_one_step(xs, ys):
-            _, cost = session.run([train_op, cross_entropy], feed_dict={features: xs, labels: ys})
-            return cost
-        def train_one_epoch():
-            return (
-                split(mnist['train']['features'], mnist['train']['labels'])
-                    |> map$(pair -> train_one_step(*pair))
-                    |> list
-                )
         session.run(tf.global_variables_initializer())
-        range(0, 10) |> map$(_ -> train_one_epoch()) |> map$(np.mean) |> list |> print
+        range(0, 25) |> map$(_ -> train_one_epoch(session)) |> map$(print) |> list
